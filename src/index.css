@@ -1,0 +1,284 @@
+@import 'tailwindcss';
+
+/*
+ * Theme: src/app/theme.ts puts `.dark` on <html> when the person chose the
+ * dark theme, or chose "system" and the OS prefers dark.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+
+  --color-lavender-50: #f7f4fd;
+  --color-lavender-100: #efe9fb;
+  --color-lavender-200: #e0d5f6;
+  --color-lavender-300: #c9b6ee;
+  --color-lavender-400: #ab8fe2;
+  --color-lavender-500: #8f6dd3;
+  --color-lavender-600: #7654bc;
+  --color-lavender-700: #60439b;
+  --color-lavender-800: #4d377c;
+  --color-lavender-900: #3a2b5c;
+  --color-lavender-950: #241b3b;
+
+  --color-cream-50: #fffcf7;
+  --color-cream-100: #fdf7ee;
+  --color-cream-200: #f8eedf;
+  --color-cream-300: #f0e0c9;
+  --color-cream-400: #e4caa7;
+
+  --color-blush-50: #fdf2f4;
+  --color-blush-100: #fbe4e9;
+  --color-blush-300: #efa9b8;
+  --color-blush-500: #d9738a;
+  --color-blush-600: #c05a72;
+  --color-blush-700: #9e4459;
+
+  --color-sage-50: #eff6f1;
+  --color-sage-100: #dcebe1;
+  --color-sage-300: #a9cbb5;
+  --color-sage-500: #6f9f84;
+  --color-sage-600: #557f68;
+  --color-sage-700: #426552;
+
+  --color-honey-50: #fdf5ea;
+  --color-honey-100: #f9e6cc;
+  --color-honey-500: #d4904f;
+  --color-honey-700: #94592a;
+
+  --radius-4xl: 2rem;
+
+  --shadow-soft: 0 1px 2px rgb(58 43 92 / 0.04), 0 8px 24px -12px rgb(58 43 92 / 0.18);
+  --shadow-lifted: 0 2px 4px rgb(58 43 92 / 0.05), 0 16px 40px -16px rgb(58 43 92 / 0.28);
+
+  --ease-gentle: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-up: fade-up 0.5s var(--ease-gentle) both;
+  --animate-fade-in: fade-in 0.4s var(--ease-gentle) both;
+  --animate-breathe: breathe 8s ease-in-out infinite;
+  --animate-soft-pulse: soft-pulse 1.8s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes breathe {
+    0%,
+    100% {
+      transform: scale(0.82);
+    }
+    50% {
+      transform: scale(1);
+    }
+  }
+  @keyframes soft-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.55;
+      transform: scale(0.85);
+    }
+  }
+}
+
+/* Semantic design tokens: light ("daylight") theme. */
+:root {
+  --vb-bg: var(--color-cream-50);
+  --vb-surface: #ffffff;
+  --vb-surface-muted: var(--color-lavender-50);
+  --vb-surface-sunken: var(--color-cream-100);
+  --vb-ink: #2b2238;
+  --vb-ink-muted: #625873;
+  --vb-ink-subtle: #8d84a0;
+  --vb-line: #ebe4f5;
+  --vb-line-strong: #d6cbe8;
+  --vb-accent: var(--color-lavender-600);
+  --vb-accent-hover: var(--color-lavender-700);
+  --vb-accent-soft: var(--color-lavender-100);
+  --vb-accent-ink: var(--color-lavender-700);
+  --vb-on-accent: #ffffff;
+  --vb-record: var(--color-blush-600);
+  --vb-record-strong: var(--color-blush-700);
+  --vb-on-record: #ffffff;
+  --vb-record-soft: var(--color-blush-50);
+  --vb-calm: var(--color-sage-600);
+  --vb-calm-soft: var(--color-sage-50);
+  --vb-caution: var(--color-honey-700);
+  --vb-caution-soft: var(--color-honey-50);
+  --vb-glow-1: rgb(201 182 238 / 0.45);
+  --vb-glow-2: rgb(251 228 233 / 0.6);
+  --vb-glow-3: rgb(248 238 223 / 0.8);
+  --vb-focus: var(--color-lavender-500);
+  --vb-chart-trace: var(--color-lavender-600);
+  --vb-chart-band: rgb(111 159 132 / 0.16);
+  --vb-chart-band-edge: rgb(85 127 104 / 0.45);
+  --vb-chart-grid: #ece6f4;
+  --vb-chart-label: #8d84a0;
+  --vb-chart-cursor: var(--color-blush-600);
+  --vb-chart-wave: #b9a2e8;
+  --vb-chart-wave-played: var(--color-lavender-600);
+  color-scheme: light;
+}
+
+/* Dark ("dusk") theme. */
+:root.dark {
+  --vb-bg: #17131f;
+  --vb-surface: #211b2c;
+  --vb-surface-muted: #2a2338;
+  --vb-surface-sunken: #1c1726;
+  --vb-ink: #f1ecf8;
+  --vb-ink-muted: #b9aecb;
+  --vb-ink-subtle: #8a7f9e;
+  --vb-line: #342b45;
+  --vb-line-strong: #483d5e;
+  --vb-accent: #b9a0ec;
+  --vb-accent-hover: #cdbbf3;
+  --vb-accent-soft: #33294a;
+  --vb-accent-ink: #d5c6f5;
+  --vb-on-accent: #1e1730;
+  --vb-record: #ec98aa;
+  --vb-record-strong: #ec98aa;
+  --vb-on-record: #2a1520;
+  --vb-record-soft: #3a2230;
+  --vb-calm: #9fcdb2;
+  --vb-calm-soft: #1f2e27;
+  --vb-caution: #f0bd8a;
+  --vb-caution-soft: #34281c;
+  --vb-glow-1: rgb(96 67 155 / 0.32);
+  --vb-glow-2: rgb(158 68 89 / 0.16);
+  --vb-glow-3: rgb(58 43 92 / 0.3);
+  --vb-focus: #c9b6ee;
+  --vb-chart-trace: #9d7ddb;
+  --vb-chart-band: rgb(159 205 178 / 0.14);
+  --vb-chart-band-edge: rgb(159 205 178 / 0.45);
+  --vb-chart-grid: #2e2640;
+  --vb-chart-label: #8a7f9e;
+  --vb-chart-cursor: #dc6c84;
+  --vb-chart-wave: #65548a;
+  --vb-chart-wave-played: #9d7ddb;
+  color-scheme: dark;
+}
+
+/* Before scripts run, match the OS background so dark-mode users don't see a light flash. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light, .dark) {
+    --vb-bg: #17131f;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--vb-bg);
+  --color-surface: var(--vb-surface);
+  --color-surface-muted: var(--vb-surface-muted);
+  --color-surface-sunken: var(--vb-surface-sunken);
+  --color-ink: var(--vb-ink);
+  --color-ink-muted: var(--vb-ink-muted);
+  --color-ink-subtle: var(--vb-ink-subtle);
+  --color-line: var(--vb-line);
+  --color-line-strong: var(--vb-line-strong);
+  --color-accent: var(--vb-accent);
+  --color-accent-hover: var(--vb-accent-hover);
+  --color-accent-soft: var(--vb-accent-soft);
+  --color-accent-ink: var(--vb-accent-ink);
+  --color-on-accent: var(--vb-on-accent);
+  --color-record: var(--vb-record);
+  --color-record-strong: var(--vb-record-strong);
+  --color-on-record: var(--vb-on-record);
+  --color-record-soft: var(--vb-record-soft);
+  --color-calm: var(--vb-calm);
+  --color-calm-soft: var(--vb-calm-soft);
+  --color-caution: var(--vb-caution);
+  --color-caution-soft: var(--vb-caution-soft);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--vb-bg);
+    color: var(--vb-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Soft, fixed background glow (a pseudo-element, because iOS ignores background-attachment: fixed). */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(70rem 40rem at -10% -15%, var(--vb-glow-1), transparent 60%),
+      radial-gradient(50rem 32rem at 110% -5%, var(--vb-glow-2), transparent 55%),
+      radial-gradient(60rem 40rem at 50% 120%, var(--vb-glow-3), transparent 60%);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-variation-settings: 'SOFT' 100;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--vb-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--vb-accent-soft);
+    color: var(--vb-ink);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
