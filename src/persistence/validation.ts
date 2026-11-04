@@ -6,6 +6,7 @@
 import { ANALYSIS_VERSION, type RecordingAnalysis } from '../audio/analysis';
 import type { PitchSummary } from '../audio/pitchTrack';
 import type { ResonanceSummary } from '../audio/resonance';
+import type { VoiceQualitySummary } from '../audio/voiceQuality';
 import { isLocale } from '../i18n/locales';
 import {
   HZ_LIMITS,
@@ -82,15 +83,23 @@ function sanitizeResonance(value: unknown): ResonanceSummary | null {
   return Object.fromEntries(keys.map((key) => [key, value[key]])) as unknown as ResonanceSummary;
 }
 
+function sanitizeVoice(value: unknown): VoiceQualitySummary | null {
+  if (!isRecord(value) || !isFiniteNumber(value.h1h2Db) || !isFiniteNumber(value.frames) || value.frames <= 0) {
+    return null;
+  }
+  return { h1h2Db: clamp(value.h1h2Db, -40, 40), frames: Math.round(value.frames) };
+}
+
 export function sanitizeAnalysis(value: unknown): RecordingAnalysis | null {
-  if (!isRecord(value) || value.version !== ANALYSIS_VERSION) return null;
-  const { durationSec, hopSeconds, firstFrameSec, pitch, peaks } = value;
+  // Version 1 predates the vocal weight measurement; it is read as-is, with `voice` null.
+  if (!isRecord(value) || (value.version !== 1 && value.version !== ANALYSIS_VERSION)) return null;
+  const { version, durationSec, hopSeconds, firstFrameSec, pitch, peaks } = value;
   if (!isFiniteNumber(durationSec) || !isFiniteNumber(hopSeconds) || hopSeconds <= 0) return null;
   if (!isFiniteNumber(firstFrameSec) || !Array.isArray(pitch) || !Array.isArray(peaks)) return null;
   if (!pitch.every((hz) => hz === null || (isFiniteNumber(hz) && hz > 0))) return null;
   if (!peaks.every((peak) => isFiniteNumber(peak))) return null;
   return {
-    version: ANALYSIS_VERSION,
+    version,
     durationSec,
     hopSeconds,
     firstFrameSec,
@@ -98,6 +107,7 @@ export function sanitizeAnalysis(value: unknown): RecordingAnalysis | null {
     peaks: (peaks as number[]).map((peak) => clamp(peak, 0, 1)),
     summary: value.summary === null ? null : sanitizeSummary(value.summary),
     resonance: sanitizeResonance(value.resonance),
+    voice: version === 1 ? null : sanitizeVoice(value.voice),
   };
 }
 

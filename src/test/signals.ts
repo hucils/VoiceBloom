@@ -57,9 +57,42 @@ export function glide(
 }
 
 /**
+ * Passes `signal` through second-order resonators at the given formant
+ * frequencies (a Klatt-style cascade, each with unity gain at 0 Hz), in place,
+ * then scales the result so its peak is `amplitude`.
+ */
+function shapeWithFormants(
+  signal: Float64Array,
+  formants: readonly number[],
+  bandwidths: readonly number[],
+  sampleRate: number,
+  amplitude: number,
+) {
+  const period = 1 / sampleRate;
+  formants.forEach((frequency, index) => {
+    const bandwidth = bandwidths[index] ?? 70 + 40 * index;
+    const c = -Math.exp(-2 * Math.PI * bandwidth * period);
+    const b = 2 * Math.exp(-Math.PI * bandwidth * period) * Math.cos(2 * Math.PI * frequency * period);
+    const a = 1 - b - c;
+    let previous = 0;
+    let beforePrevious = 0;
+    for (let i = 0; i < signal.length; i++) {
+      const value = a * signal[i]! + b * previous + c * beforePrevious;
+      beforePrevious = previous;
+      previous = value;
+      signal[i] = value;
+    }
+  });
+  let peak = 0;
+  for (const value of signal) peak = Math.max(peak, Math.abs(value));
+  return Float32Array.from(signal, (value) => (peak > 0 ? (value / peak) * amplitude : 0));
+}
+
+/**
  * A synthetic vowel: an impulse train at `f0` passed through second-order
  * resonators at the given formant frequencies (a Klatt-style cascade). The
  * formants are therefore known exactly, which is what LPC should recover.
+ * An impulse train has equally strong harmonics, so the source's H1–H2 is 0 dB.
  */
 export function vowel(
   f0: number,
@@ -83,24 +116,33 @@ export function vowel(
       if (!pauses.some(([start, end]) => time >= start && time < end)) signal[i] = 1;
     }
   }
-  const period = 1 / sampleRate;
-  formants.forEach((frequency, index) => {
-    const bandwidth = bandwidths[index] ?? 70 + 40 * index;
-    const c = -Math.exp(-2 * Math.PI * bandwidth * period);
-    const b = 2 * Math.exp(-Math.PI * bandwidth * period) * Math.cos(2 * Math.PI * frequency * period);
-    const a = 1 - b - c;
-    let previous = 0;
-    let beforePrevious = 0;
-    for (let i = 0; i < length; i++) {
-      const value = a * signal[i]! + b * previous + c * beforePrevious;
-      beforePrevious = previous;
-      previous = value;
-      signal[i] = value;
-    }
-  });
-  let peak = 0;
-  for (const value of signal) peak = Math.max(peak, Math.abs(value));
-  return Float32Array.from(signal, (value) => (peak > 0 ? (value / peak) * amplitude : 0));
+  return shapeWithFormants(signal, formants, bandwidths, sampleRate, amplitude);
+}
+
+/**
+ * A synthetic vowel with a chosen source spectrum: harmonics of `f0` (up to
+ * 4 kHz) at the levels `harmonicDb(n)` gives for harmonic n = 1, 2, …, passed
+ * through formant resonators. The source's H1–H2 is therefore known exactly,
+ * which is what the vocal weight measurement should recover once the formants'
+ * boost is removed.
+ */
+export function shapedVowel(
+  f0: number,
+  formants: readonly number[],
+  sampleRate: number,
+  durationSec: number,
+  harmonicDb: (harmonic: number) => number,
+  amplitude = 0.5,
+) {
+  const length = Math.round(sampleRate * durationSec);
+  const signal = new Float64Array(length);
+  const top = Math.min(4000, sampleRate / 2 - 100);
+  for (let harmonic = 1; harmonic * f0 < top; harmonic++) {
+    const level = 10 ** (harmonicDb(harmonic) / 20);
+    const step = (2 * Math.PI * harmonic * f0) / sampleRate;
+    for (let i = 0; i < length; i++) signal[i] = signal[i]! + level * Math.sin(step * i);
+  }
+  return shapeWithFormants(signal, formants, [], sampleRate, amplitude);
 }
 
 export function silence(sampleRate: number, durationSec: number) {

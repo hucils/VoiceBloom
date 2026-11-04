@@ -21,16 +21,26 @@ export interface RecordingsUsage {
 
 export type RecordingsRepository = ReturnType<typeof createRecordingsRepository>;
 
+/**
+ * Recordings saved before analysis version 2 have no vocal weight (`voice`)
+ * at all; read them as "not measured" so the rest of the app sees one shape.
+ */
+function withCurrentShape(meta: RecordingMeta): RecordingMeta {
+  if (!meta.analysis || meta.analysis.voice !== undefined) return meta;
+  return { ...meta, analysis: { ...meta.analysis, voice: null } };
+}
+
 export function createRecordingsRepository(db: VoiceBloomDB, notifier: ChangeNotifier) {
   return {
     /** All recordings, newest first. Audio is not loaded. */
     async list(): Promise<RecordingMeta[]> {
       const all = await db.getAllFromIndex('recordings', 'by-created');
-      return all.reverse();
+      return all.reverse().map(withCurrentShape);
     },
 
-    get(id: string): Promise<RecordingMeta | undefined> {
-      return db.get('recordings', id);
+    async get(id: string): Promise<RecordingMeta | undefined> {
+      const meta = await db.get('recordings', id);
+      return meta && withCurrentShape(meta);
     },
 
     getAudio(id: string): Promise<StoredAudio | undefined> {

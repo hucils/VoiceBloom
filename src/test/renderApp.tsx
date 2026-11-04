@@ -68,4 +68,5 @@ export const SPEECH_ANALYSIS: RecordingAnalysis = {
     voicedRatio: 0.8,
   },
   resonance: { formantSpacingHz: 1120, f1Hz: 560, f2Hz: 1680, f3Hz: 2800, frames: 220 },
+  voice: { h1h2Db: 6.2, frames: 210 },
 };

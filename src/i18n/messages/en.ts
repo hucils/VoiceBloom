@@ -207,7 +207,8 @@ export const en = {
   },
   femininity: {
     title: 'Femininity estimate',
-    subtitle: 'How feminine this recording may sound to listeners, based on pitch and resonance.',
+    subtitle:
+      'How feminine this recording may sound to listeners, based on pitch, resonance, vocal weight, intonation and how natural it sounds.',
     outOf: 'out of 100',
     range: 'Likely range {low}–{high}',
     scaleStart: 'More masculine-leaning',
@@ -215,19 +216,45 @@ export const en = {
     scaleSummary: 'Femininity estimate {score} out of 100, likely between {low} and {high}.',
     pitchPart: 'Pitch on its own',
     resonancePart: 'Resonance on its own',
+    weightPart: 'Vocal weight on its own',
+    intonationPart: 'Intonation on its own',
+    weightNotMeasured: 'Could not be measured in this recording, so the other parts count for more.',
+    weightNotMeasuredOlder: 'Not measured: this recording was analysed before VoiceBloom measured vocal weight.',
+    naturalnessPart: 'How natural it sounds',
+    naturalnessStart: 'Less natural',
+    naturalnessEnd: 'More natural',
+    naturalnessSummary: 'How natural it sounds: {score} out of 100.',
+    naturalnessNone: 'Nothing stood out as strained or out of place.',
+    naturalnessLowered: 'These lowered it, and the estimate with it:',
+    notePitchAheadOfResonance:
+      'Pitch leans much further towards feminine than resonance does. A raised pitch without brighter resonance tends to sound less natural.',
+    notePitchAheadOfWeight:
+      'Pitch leans much further towards feminine than vocal weight does. A high pitch with a full, heavy tone can sound pushed.',
+    noteFlatMelody: 'The pitch barely moves, which can sound more like a held note than like speech.',
+    noteExaggeratedMelody: 'The melody moves much more than in everyday speech, which can sound performed.',
+    notePitchBreaks: 'The pitch broke or jumped suddenly several times.',
     lowConfidence:
       'Less certain for this recording: it was short, or the voice was high enough to make resonance harder to measure.',
     notEnoughSpeech:
       'Not enough clear speech for an estimate. A recording with at least a few seconds of natural speech works best.',
+    notSpeech:
+      'This sounds like held notes or sirens rather than speech, so there is no estimate. Natural speech, such as reading a passage, works best.',
     noResonance:
       'Resonance could not be measured in this recording, so there is no estimate. Natural speech, such as reading a passage, works best.',
     caveat: 'A rough guide based on published averages, not a verdict. It says nothing about your gender.',
     howItWorks: 'How this works',
-    explanationPitch: 'Pitch: the recording’s typical pitch is compared with published averages for adult speakers.',
+    explanationPitch:
+      'Pitch ({share}%): the recording’s typical pitch, compared with published averages for adult speakers.',
     explanationResonance:
-      'Resonance: formant spacing shows how bright your vocal tract sounds. Brighter resonance is associated with feminine voices.',
+      'Resonance ({share}%): formant spacing shows how bright your vocal tract sounds. Brighter resonance is associated with feminine voices.',
+    explanationWeight:
+      'Vocal weight ({share}%): how strong the lowest harmonic is next to the one above it. Lighter, less buzzy voices have a stronger lowest harmonic, and women’s voices average a few decibels more. Breathiness raises it too.',
+    explanationIntonation:
+      'Intonation ({share}%): how much the pitch moves. A livelier melody is often heard as more feminine, but the research is mixed, so it counts least.',
+    explanationNaturalness:
+      'Naturalness: listeners tend to hear a voice as less natural when pitch leans much further towards feminine than resonance or weight, when the melody is very flat or exaggerated, or when the pitch breaks. These lower the estimate; sounding natural never raises it.',
     explanationLimits:
-      'Real perception also depends on intonation, weight, articulation, words, context and the listener. Microphones and rooms affect the measurements, and the averages come mostly from research with English speakers.',
+      'Real perception also depends on articulation, speech rate, words, context and the listener. Microphones and rooms affect the measurements, vocal weight most of all, and the research comes mostly from English speakers.',
   },
   practice: {
     ideasTitle: 'Ideas to explore',
@@ -303,13 +330,13 @@ export const en = {
     rangeInvalid: 'The upper value must be higher than the lower one.',
     femininityTitle: 'Femininity estimate',
     femininityHint:
-      'Optional. Shows a rough estimate of how feminine your recordings may sound, based on pitch and resonance. It stays off unless you turn it on.',
+      'Optional. Shows a rough estimate of how feminine your recordings may sound, based on pitch, resonance, vocal weight, intonation and how natural they sound. It stays off unless you turn it on.',
     femininityToggle: 'Show the femininity estimate',
     femininityDialogTitle: 'Turn on the femininity estimate?',
     femininityDialogMethod:
-      'VoiceBloom will compare the pitch and resonance of your recordings with published averages for adult speakers, and show a rough estimate, from 0 to 100, of how feminine each one may sound to listeners.',
+      'VoiceBloom will compare the pitch, resonance, vocal weight and intonation of your recordings with published research on adult speakers, check how natural they sound, and show a rough estimate, from 0 to 100, of how feminine each one may sound to listeners.',
     femininityDialogLimits:
-      'It is an approximation. Real perception also depends on intonation, vocal weight, articulation, what you say and who is listening, and the averages come mostly from research with English speakers.',
+      'It is an approximation. Real perception also depends on articulation, what you say and who is listening, and the research comes mostly from English speakers.',
     femininityDialogWellbeing:
       'It says nothing about your gender or your worth. Some people find estimates like this motivating; others find them stressful. You can turn it off at any time.',
     femininityDialogPrivacy: 'Like everything in VoiceBloom, it is calculated on this device and never stored.',

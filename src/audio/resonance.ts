@@ -67,26 +67,38 @@ export function formantCandidates(frame: Float32Array, sampleRate: number, order
     .sort((a, b) => a.frequency - b.frequency);
 }
 
+type FormantTriple = readonly [FormantCandidate, FormantCandidate, FormantCandidate];
+
 /**
- * Chooses F1–F3 from the candidates, skipping a pole that has locked onto the
- * fundamental (common with higher voices) and rejecting implausible patterns.
+ * Chooses F1–F3 (with their bandwidths) from the candidates, skipping a pole
+ * that has locked onto the fundamental (common with higher voices) and
+ * rejecting implausible patterns.
  */
+export function pickFormantCandidates(
+  candidates: readonly FormantCandidate[],
+  fundamentalHz: number | null,
+): FormantTriple | null {
+  const usable = candidates
+    .filter((candidate) => candidate.frequency >= 200)
+    .filter(
+      (candidate) =>
+        fundamentalHz === null || Math.abs(candidate.frequency - fundamentalHz) > 0.2 * fundamentalHz,
+    );
+  const [first, second, third] = usable;
+  if (first === undefined || second === undefined || third === undefined) return null;
+  const [f1, f2, f3] = [first.frequency, second.frequency, third.frequency];
+  const plausible =
+    f1 <= 1200 && f2 >= 550 && f2 <= 3200 && f3 >= 1500 && f3 <= 4200 && f2 - f1 >= 150 && f3 - f2 >= 150;
+  return plausible ? [first, second, third] : null;
+}
+
+/** Like {@link pickFormantCandidates}, but returns just the frequencies of F1–F3. */
 export function pickFormants(
   candidates: readonly FormantCandidate[],
   fundamentalHz: number | null,
 ): [number, number, number] | null {
-  const usable = candidates
-    .map((candidate) => candidate.frequency)
-    .filter((frequency) => frequency >= 200)
-    .filter(
-      (frequency) =>
-        fundamentalHz === null || Math.abs(frequency - fundamentalHz) > 0.2 * fundamentalHz,
-    );
-  const [f1, f2, f3] = usable;
-  if (f1 === undefined || f2 === undefined || f3 === undefined) return null;
-  const plausible =
-    f1 <= 1200 && f2 >= 550 && f2 <= 3200 && f3 >= 1500 && f3 <= 4200 && f2 - f1 >= 150 && f3 - f2 >= 150;
-  return plausible ? [f1, f2, f3] : null;
+  const picked = pickFormantCandidates(candidates, fundamentalHz);
+  return picked && [picked[0].frequency, picked[1].frequency, picked[2].frequency];
 }
 
 /** Least-squares fit of F1–F3 to the uniform-tube pattern Fᵢ = (2i − 1)·ΔF / 2. */
@@ -94,18 +106,38 @@ export function formantSpacing(f1: number, f2: number, f3: number): number {
   return (0.5 * f1 + 1.5 * f2 + 2.5 * f3) / 8.75;
 }
 
+export interface FormantFrame {
+  /** Index of the pitch frame this measurement belongs to. */
+  index: number;
+  /** F1, F2 and F3 with their bandwidths, lowest first. */
+  formants: FormantTriple;
+}
+
 /**
- * Measures resonance over the voiced frames of a recording.
+ * Formants measured over the voiced frames of a recording, together with the
+ * band-limited signal they were measured on, so that other measurements (see
+ * voiceQuality.ts) can look at exactly the same moments.
+ */
+export interface FormantTrack {
+  /** The recording, downsampled to 8–16 kHz. */
+  signal: Float32Array;
+  sampleRate: number;
+  /** At most a few hundred frames, spread evenly over the voiced ones. */
+  frames: FormantFrame[];
+}
+
+/**
+ * Measures formants over the voiced frames of a recording.
  * `pitch`, `firstFrameSec` and `hopSeconds` come from the pitch analysis and
  * select which moments to look at.
  */
-export function analyzeResonance(
+export function trackFormants(
   samples: Float32Array,
   sampleRate: number,
   pitch: ReadonlyArray<number | null>,
   firstFrameSec: number,
   hopSeconds: number,
-): ResonanceSummary | null {
+): FormantTrack {
   // Formants of interest lie below ~4 kHz; work at 8–16 kHz so LPC models just that band.
   let signal = samples;
   let rate = sampleRate;
@@ -113,6 +145,7 @@ export function analyzeResonance(
     signal = decimateByTwo(signal);
     rate /= 2;
   }
+  const track: FormantTrack = { signal, sampleRate: rate, frames: [] };
   const order = Math.round(rate / 1000) + 2;
   const frameLength = Math.round(FRAME_SECONDS * rate);
 
@@ -120,31 +153,37 @@ export function analyzeResonance(
   pitch.forEach((value, index) => {
     if (value !== null) voiced.push(index);
   });
-  if (voiced.length < MIN_FRAMES) return null;
+  if (voiced.length < MIN_FRAMES) return track;
   const stride = Math.max(1, voiced.length / MAX_FRAMES);
 
-  const f1s: number[] = [];
-  const f2s: number[] = [];
-  const f3s: number[] = [];
-  const spacings: number[] = [];
   for (let position = 0; position < voiced.length; position += stride) {
     const index = voiced[Math.floor(position)]!;
     const centre = Math.round((firstFrameSec + index * hopSeconds) * rate);
     const start = centre - Math.floor(frameLength / 2);
     if (start < 0 || start + frameLength > signal.length) continue;
-    const formants = pickFormants(
+    const formants = pickFormantCandidates(
       formantCandidates(signal.subarray(start, start + frameLength), rate, order),
       pitch[index] ?? null,
     );
-    if (!formants) continue;
-    const [f1, f2, f3] = formants;
+    if (formants) track.frames.push({ index, formants });
+  }
+  return track;
+}
+
+/** Summarises a formant track as resonance: median formants and formant spacing. */
+export function summarizeResonance(track: FormantTrack): ResonanceSummary | null {
+  if (track.frames.length < MIN_FRAMES) return null;
+  const f1s: number[] = [];
+  const f2s: number[] = [];
+  const f3s: number[] = [];
+  const spacings: number[] = [];
+  for (const { formants } of track.frames) {
+    const [f1, f2, f3] = [formants[0].frequency, formants[1].frequency, formants[2].frequency];
     f1s.push(f1);
     f2s.push(f2);
     f3s.push(f3);
     spacings.push(formantSpacing(f1, f2, f3));
   }
-
-  if (spacings.length < MIN_FRAMES) return null;
   return {
     formantSpacingHz: Math.round(median(spacings)),
     f1Hz: Math.round(median(f1s)),

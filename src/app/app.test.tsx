@@ -105,6 +105,51 @@ describe('femininity estimate (opt-in)', () => {
     expect(screen.getByText('out of 100')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Femininity estimate \d+ out of 100/ })).toBeInTheDocument();
   });
+
+  it('shows each part on its own, and what made it sound less natural', async () => {
+    const user = userEvent.setup();
+    const repos = await setupRepositories({ onboardingCompleted: true, showFemininityEstimate: true });
+    // SPEECH_ANALYSIS has a very steady melody (0.7 semitones of variation).
+    await repos.recordings.add({ audio: audio(), mimeType: 'audio/webm', durationMs: 8000, analysis: SPEECH_ANALYSIS });
+    renderApp(repos, '/recordings');
+
+    await user.click(await screen.findByRole('button', { name: 'Show details' }));
+    const card = (await screen.findByRole('heading', { name: 'Femininity estimate' })).closest('section')!;
+    for (const part of ['Pitch', 'Resonance', 'Vocal weight', 'Intonation']) {
+      expect(within(card).getByRole('img', { name: new RegExp(`^${part} on its own: \\d+$`) })).toBeInTheDocument();
+    }
+    expect(within(card).getByRole('img', { name: /^How natural it sounds: \d+ out of 100\.$/ })).toBeInTheDocument();
+    expect(within(card).getByText(/barely moves/)).toBeInTheDocument();
+  });
+
+  it('explains that recordings analysed before this update have no vocal weight', async () => {
+    const user = userEvent.setup();
+    const repos = await setupRepositories({ onboardingCompleted: true, showFemininityEstimate: true });
+    await repos.recordings.add({
+      audio: audio(),
+      mimeType: 'audio/webm',
+      durationMs: 8000,
+      analysis: { ...SPEECH_ANALYSIS, version: 1, voice: null },
+    });
+    renderApp(repos, '/recordings');
+
+    await user.click(await screen.findByRole('button', { name: 'Show details' }));
+    expect(await screen.findByText(/analysed before VoiceBloom measured vocal weight/)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Femininity estimate \d+ out of 100/ })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /^Vocal weight on its own/ })).not.toBeInTheDocument();
+  });
+
+  it('does not estimate held notes or sirens', async () => {
+    const user = userEvent.setup();
+    const repos = await setupRepositories({ onboardingCompleted: true, showFemininityEstimate: true });
+    const heldNote = { ...SPEECH_ANALYSIS, pitch: SPEECH_ANALYSIS.pitch.map(() => 200) };
+    await repos.recordings.add({ audio: audio(), mimeType: 'audio/webm', durationMs: 8000, analysis: heldNote });
+    renderApp(repos, '/recordings');
+
+    await user.click(await screen.findByRole('button', { name: 'Show details' }));
+    expect(await screen.findByText(/held notes or sirens rather than speech/)).toBeInTheDocument();
+    expect(screen.queryByText('out of 100')).not.toBeInTheDocument();
+  });
 });
 
 describe('recordings', () => {

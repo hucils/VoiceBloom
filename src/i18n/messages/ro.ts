@@ -215,7 +215,8 @@ export const ro: Messages = {
   },
   femininity: {
     title: 'Estimarea feminității',
-    subtitle: 'Cât de feminină poate suna această înregistrare pentru ascultători, pe baza înălțimii și a rezonanței.',
+    subtitle:
+      'Cât de feminină poate suna această înregistrare pentru ascultători, pe baza înălțimii, a rezonanței, a greutății vocale, a intonației și a naturaleței.',
     outOf: 'din 100',
     range: 'Interval probabil: {low}–{high}',
     scaleStart: 'Mai degrabă masculină',
@@ -223,20 +224,46 @@ export const ro: Messages = {
     scaleSummary: 'Estimarea feminității: {score} din 100, probabil între {low} și {high}.',
     pitchPart: 'Doar înălțimea',
     resonancePart: 'Doar rezonanța',
+    weightPart: 'Doar greutatea vocală',
+    intonationPart: 'Doar intonația',
+    weightNotMeasured: 'Nu a putut fi măsurată în această înregistrare, așa că celelalte părți contează mai mult.',
+    weightNotMeasuredOlder:
+      'Nu a fost măsurată: înregistrarea a fost analizată înainte ca VoiceBloom să măsoare greutatea vocală.',
+    naturalnessPart: 'Cât de natural sună',
+    naturalnessStart: 'Mai puțin natural',
+    naturalnessEnd: 'Mai natural',
+    naturalnessSummary: 'Cât de natural sună: {score} din 100.',
+    naturalnessNone: 'Nimic nu a sunat forțat sau nepotrivit.',
+    naturalnessLowered: 'Acestea au scăzut naturalețea și, odată cu ea, estimarea:',
+    notePitchAheadOfResonance:
+      'Înălțimea înclină mult mai mult spre feminin decât rezonanța. O înălțime ridicată fără o rezonanță mai luminoasă tinde să sune mai puțin natural.',
+    notePitchAheadOfWeight:
+      'Înălțimea înclină mult mai mult spre feminin decât greutatea vocală. O înălțime ridicată cu un ton plin și greu poate suna forțat.',
+    noteFlatMelody: 'Înălțimea se mișcă foarte puțin, așa că poate suna mai degrabă a notă ținută decât a vorbire.',
+    noteExaggeratedMelody: 'Melodia se mișcă mult mai mult decât în vorbirea de zi cu zi, ceea ce poate suna teatral.',
+    notePitchBreaks: 'Înălțimea s-a frânt sau a sărit brusc de mai multe ori.',
     lowConfidence:
       'Estimare mai puțin sigură pentru această înregistrare: a fost scurtă sau vocea a fost destul de înaltă încât rezonanța să fie mai greu de măsurat.',
     notEnoughSpeech:
       'Nu există suficientă vorbire clară pentru o estimare. Cel mai bine funcționează o înregistrare cu cel puțin câteva secunde de vorbire naturală.',
+    notSpeech:
+      'Înregistrarea sună a note ținute sau a sirene, nu a vorbire, așa că nu există o estimare. Vorbirea naturală, de exemplu citirea unui fragment, funcționează cel mai bine.',
     noResonance:
       'Rezonanța nu a putut fi măsurată în această înregistrare, așa că nu există o estimare. Vorbirea naturală, de exemplu citirea unui fragment, funcționează cel mai bine.',
     caveat: 'Un ghid aproximativ bazat pe medii publicate, nu un verdict. Nu spune nimic despre genul tău.',
     howItWorks: 'Cum funcționează',
     explanationPitch:
-      'Înălțimea: înălțimea tipică a înregistrării este comparată cu mediile publicate pentru vorbitori adulți.',
+      'Înălțimea ({share}%): înălțimea tipică a înregistrării este comparată cu mediile publicate pentru vorbitori adulți.',
     explanationResonance:
-      'Rezonanța: distanța dintre formanți arată cât de luminos sună tractul vocal. O rezonanță mai luminoasă este asociată cu vocile feminine.',
+      'Rezonanța ({share}%): distanța dintre formanți arată cât de luminos sună tractul vocal. O rezonanță mai luminoasă este asociată cu vocile feminine.',
+    explanationWeight:
+      'Greutatea vocală ({share}%): cât de puternică este prima armonică față de cea de deasupra ei. Vocile mai ușoare, mai puțin vibrante, au o primă armonică mai puternică, iar vocile femeilor au în medie câțiva decibeli în plus. Și un sunet aerat o crește.',
+    explanationIntonation:
+      'Intonația ({share}%): cât de mult se mișcă înălțimea. O melodie mai vie este adesea percepută ca mai feminină, dar rezultatele cercetărilor sunt amestecate, așa că ea contează cel mai puțin.',
+    explanationNaturalness:
+      'Naturalețea: ascultătorii tind să perceapă o voce ca mai puțin naturală când înălțimea înclină mult mai mult spre feminin decât rezonanța sau greutatea vocală, când melodia este foarte plată sau exagerată ori când înălțimea se frânge. Acestea scad estimarea; o voce naturală nu o crește niciodată.',
     explanationLimits:
-      'Percepția reală depinde și de intonație, greutate, articulație, cuvinte, context și ascultător. Microfonul și camera influențează măsurătorile, iar mediile provin mai ales din cercetări cu vorbitori de limba engleză.',
+      'Percepția reală depinde și de articulație, de ritmul vorbirii, de cuvinte, de context și de ascultător. Microfonul și camera influențează măsurătorile, mai ales greutatea vocală, iar cercetările provin mai ales de la vorbitori de limba engleză.',
   },
   practice: {
     ideasTitle: 'Idei de explorat',
@@ -323,13 +350,13 @@ export const ro: Messages = {
     rangeInvalid: 'Valoarea de sus trebuie să fie mai mare decât cea de jos.',
     femininityTitle: 'Estimarea feminității',
     femininityHint:
-      'Opțională. Arată o estimare aproximativă a cât de feminine pot suna înregistrările tale, pe baza înălțimii și a rezonanței. Rămâne oprită până când o activezi.',
+      'Opțională. Arată o estimare aproximativă a cât de feminine pot suna înregistrările tale, pe baza înălțimii, a rezonanței, a greutății vocale, a intonației și a naturaleței. Rămâne oprită până când o activezi.',
     femininityToggle: 'Arată estimarea feminității',
     femininityDialogTitle: 'Activezi estimarea feminității?',
     femininityDialogMethod:
-      'VoiceBloom va compara înălțimea și rezonanța înregistrărilor tale cu mediile publicate pentru vorbitori adulți și va afișa o estimare aproximativă, de la 0 la 100, a cât de feminină poate suna fiecare pentru ascultători.',
+      'VoiceBloom va compara înălțimea, rezonanța, greutatea vocală și intonația înregistrărilor tale cu cercetările publicate despre vorbitori adulți, va verifica cât de natural sună și va afișa o estimare aproximativă, de la 0 la 100, a cât de feminină poate suna fiecare pentru ascultători.',
     femininityDialogLimits:
-      'Este o aproximare. Percepția reală depinde și de intonație, greutatea vocală, articulație, de ce spui și de cine ascultă, iar mediile provin mai ales din cercetări cu vorbitori de limba engleză.',
+      'Este o aproximare. Percepția reală depinde și de articulație, de ce spui și de cine ascultă, iar cercetările provin mai ales de la vorbitori de limba engleză.',
     femininityDialogWellbeing:
       'Nu spune nimic despre genul tău sau despre valoarea ta. Unele persoane găsesc astfel de estimări motivante; altele le găsesc stresante. O poți dezactiva oricând.',
     femininityDialogPrivacy:

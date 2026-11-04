@@ -5,11 +5,17 @@
  */
 import { amplitudeToDb, rms, SILENCE_DB } from './level';
 import { medianSmooth, removeOutliers, removeShortRuns, summarizePitch, type PitchSummary } from './pitchTrack';
-import { analyzeResonance, type ResonanceSummary } from './resonance';
+import { summarizeResonance, trackFormants, type ResonanceSummary } from './resonance';
+import { analyzeVoiceQuality, type VoiceQualitySummary } from './voiceQuality';
 import { computePeaks } from './waveform';
 import { createYinDetector, DEFAULT_YIN_OPTIONS, yinFrameSize } from './yin';
 
-export const ANALYSIS_VERSION = 1;
+/**
+ * Version of the stored analysis format. Version 2 added `voice` (vocal
+ * weight); version-1 analyses are still read, with `voice` set to null.
+ */
+export const ANALYSIS_VERSION = 2;
+export type AnalysisVersion = 1 | typeof ANALYSIS_VERSION;
 
 export interface AnalysisOptions {
   /** Time between pitch frames, in seconds. */
@@ -26,7 +32,7 @@ export interface AnalysisOptions {
 }
 
 export interface RecordingAnalysis {
-  version: typeof ANALYSIS_VERSION;
+  version: AnalysisVersion;
   durationSec: number;
   /** Seconds between consecutive pitch values. */
   hopSeconds: number;
@@ -39,6 +45,8 @@ export interface RecordingAnalysis {
   summary: PitchSummary | null;
   /** Resonance (formant) measurement over the voiced frames, when there was enough speech. */
   resonance: ResonanceSummary | null;
+  /** Vocal weight measurement, when there was enough speech. Always null in version 1. */
+  voice: VoiceQualitySummary | null;
 }
 
 const DEFAULTS = {
@@ -102,6 +110,7 @@ export function analyzeSamples(
   );
   const hopSeconds = hop / sampleRate;
   const firstFrameSec = frameSize / 2 / sampleRate;
+  const formants = trackFormants(samples, sampleRate, pitch, firstFrameSec, hopSeconds);
 
   return {
     version: ANALYSIS_VERSION,
@@ -111,7 +120,8 @@ export function analyzeSamples(
     pitch,
     peaks: computePeaks(samples, settings.peakCount).map((peak) => round(peak, 3)),
     summary: summarizePitch(pitch, hopSeconds),
-    resonance: analyzeResonance(samples, sampleRate, pitch, firstFrameSec, hopSeconds),
+    resonance: summarizeResonance(formants),
+    voice: analyzeVoiceQuality(formants, pitch, firstFrameSec, hopSeconds),
   };
 }
 

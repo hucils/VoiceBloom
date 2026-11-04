@@ -1,13 +1,13 @@
 import { Info, Target } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
 
-import type { RecordingAnalysis } from '../../audio/analysis';
+import { ANALYSIS_VERSION, type RecordingAnalysis } from '../../audio/analysis';
 import { hzToNote } from '../../audio/pitchMath';
 import { Button } from '../../components/Button';
 import { Callout } from '../../components/Layout';
 import { useToast } from '../../components/ToastProvider';
 import { useI18n } from '../../i18n/I18nContext';
-import { estimateFemininity } from '../../insights/femininity';
+import { estimateFromAnalysis, FEMININITY_MODEL, type NaturalnessNote } from '../../insights/femininity';
 import { useSettings } from '../../state/SettingsContext';
 import { EstimateScale } from '../viz/EstimateScale';
 
@@ -74,23 +74,78 @@ export function RecordingStats({ analysis }: { analysis: RecordingAnalysis | nul
   );
 }
 
-function EstimatePart({ label, score }: { label: string; score: number }) {
+const NOTE_MESSAGES = {
+  'pitch-ahead-of-resonance': 'femininity.notePitchAheadOfResonance',
+  'pitch-ahead-of-weight': 'femininity.notePitchAheadOfWeight',
+  'flat-melody': 'femininity.noteFlatMelody',
+  'exaggerated-melody': 'femininity.noteExaggeratedMelody',
+  'pitch-breaks': 'femininity.notePitchBreaks',
+} as const satisfies Record<NaturalnessNote, string>;
+
+const STATUS_MESSAGES = {
+  'not-enough-speech': 'femininity.notEnoughSpeech',
+  'not-speech': 'femininity.notSpeech',
+  'no-resonance': 'femininity.noResonance',
+} as const;
+
+const share = (part: keyof typeof FEMININITY_MODEL.shares) => Math.round(100 * FEMININITY_MODEL.shares[part]);
+
+/** One factor on its own, or why it is missing. */
+function EstimatePart({ label, score, missing }: { label: string; score: number | null; missing?: string }) {
   const { t } = useI18n();
   return (
     <div>
       <dt className="flex justify-between text-xs text-ink-muted">
         <span>{label}</span>
-        <span className="font-semibold text-ink tabular-nums">{score}</span>
+        {score !== null && <span className="font-semibold text-ink tabular-nums">{score}</span>}
       </dt>
       <dd className="mt-1.5">
+        {score === null ? (
+          <span className="text-xs text-ink-muted">{missing}</span>
+        ) : (
+          <EstimateScale
+            size="sm"
+            score={score}
+            startLabel={t('femininity.scaleStart')}
+            endLabel={t('femininity.scaleEnd')}
+            summary={`${label}: ${score}`}
+          />
+        )}
+      </dd>
+    </div>
+  );
+}
+
+/** How natural the recording sounds, on its own scale, and what lowered it. */
+function NaturalnessPart({ score, notes }: { score: number; notes: readonly NaturalnessNote[] }) {
+  const { t } = useI18n();
+  return (
+    <div className="rounded-2xl bg-surface-muted px-4 py-3">
+      <p className="flex justify-between text-xs text-ink-muted">
+        <span>{t('femininity.naturalnessPart')}</span>
+        <span className="font-semibold text-ink tabular-nums">{score}</span>
+      </p>
+      <div className="mt-1.5">
         <EstimateScale
           size="sm"
           score={score}
-          startLabel={t('femininity.scaleStart')}
-          endLabel={t('femininity.scaleEnd')}
-          summary={`${label}: ${score}`}
+          startLabel={t('femininity.naturalnessStart')}
+          endLabel={t('femininity.naturalnessEnd')}
+          summary={t('femininity.naturalnessSummary', { score })}
         />
-      </dd>
+      </div>
+      {notes.length > 0 ? (
+        <>
+          <p className="mt-3 text-xs text-ink-muted">{t('femininity.naturalnessLowered')}</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-ink">
+            {notes.map((note) => (
+              <li key={note}>{t(NOTE_MESSAGES[note])}</li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mt-2 text-xs text-ink-muted">{t('femininity.naturalnessNone')}</p>
+      )}
     </div>
   );
 }
@@ -105,7 +160,7 @@ export function FemininityCard({ analysis }: { analysis: RecordingAnalysis | nul
   const headingId = useId();
   if (!settings.showFemininityEstimate || !analysis) return null;
 
-  const result = estimateFemininity(analysis.summary, analysis.resonance);
+  const result = estimateFromAnalysis(analysis);
   return (
     <section aria-labelledby={headingId} className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <h3 id={headingId} className="text-lg text-ink">
@@ -139,7 +194,16 @@ export function FemininityCard({ analysis }: { analysis: RecordingAnalysis | nul
           <dl className="grid gap-4 sm:grid-cols-2">
             <EstimatePart label={t('femininity.pitchPart')} score={result.estimate.pitchScore} />
             <EstimatePart label={t('femininity.resonancePart')} score={result.estimate.resonanceScore} />
+            <EstimatePart
+              label={t('femininity.weightPart')}
+              score={result.estimate.weightScore}
+              missing={t(
+                analysis.version < ANALYSIS_VERSION ? 'femininity.weightNotMeasuredOlder' : 'femininity.weightNotMeasured',
+              )}
+            />
+            <EstimatePart label={t('femininity.intonationPart')} score={result.estimate.intonationScore} />
           </dl>
+          <NaturalnessPart score={result.estimate.naturalnessScore} notes={result.estimate.naturalnessNotes} />
           {result.estimate.lowConfidence && (
             <Callout icon={Info} tone="caution">
               {t('femininity.lowConfidence')}
@@ -147,17 +211,18 @@ export function FemininityCard({ analysis }: { analysis: RecordingAnalysis | nul
           )}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink-muted">
-          {t(result.status === 'no-resonance' ? 'femininity.noResonance' : 'femininity.notEnoughSpeech')}
-        </p>
+        <p className="mt-3 text-sm text-ink-muted">{t(STATUS_MESSAGES[result.status])}</p>
       )}
 
       <p className="mt-4 text-xs text-ink-muted">{t('femininity.caveat')}</p>
       <details className="mt-2 text-xs text-ink-muted">
         <summary className="cursor-pointer font-medium text-accent-ink">{t('femininity.howItWorks')}</summary>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>{t('femininity.explanationPitch')}</li>
-          <li>{t('femininity.explanationResonance')}</li>
+          <li>{t('femininity.explanationPitch', { share: share('pitch') })}</li>
+          <li>{t('femininity.explanationResonance', { share: share('resonance') })}</li>
+          <li>{t('femininity.explanationWeight', { share: share('weight') })}</li>
+          <li>{t('femininity.explanationIntonation', { share: share('intonation') })}</li>
+          <li>{t('femininity.explanationNaturalness')}</li>
           <li>{t('femininity.explanationLimits')}</li>
         </ul>
       </details>

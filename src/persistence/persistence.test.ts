@@ -26,6 +26,7 @@ const analysis: RecordingAnalysis = {
     voicedRatio: 0.75,
   },
   resonance: { formantSpacingHz: 1110, f1Hz: 560, f2Hz: 1660, f3Hz: 2780, frames: 42 },
+  voice: { h1h2Db: 5.4, frames: 40 },
 };
 
 const audioBytes = (...values: number[]) => new Uint8Array(values).buffer;
@@ -65,6 +66,26 @@ describe('recordings', () => {
     const recording = await addRecording();
     await repos.recordings.rename(recording.id, `  ${'a'.repeat(200)}  `);
     expect((await repos.recordings.get(recording.id))!.title).toHaveLength(120);
+  });
+
+  it('reads recordings saved before vocal weight was measured as "not measured"', async () => {
+    const { voice: _omitted, ...versionOne } = { ...analysis, version: 1 as const };
+    await db.put('recordings', {
+      id: 'saved-earlier',
+      createdAt: 5,
+      durationMs: 1000,
+      mimeType: 'audio/webm',
+      sizeBytes: 4,
+      title: '',
+      lessonId: null,
+      stepId: null,
+      analysis: versionOne as RecordingAnalysis,
+    });
+
+    const [listed] = await repos.recordings.list();
+    expect(listed?.analysis).toMatchObject({ version: 1, voice: null, resonance: analysis.resonance });
+    expect((await repos.recordings.get('saved-earlier'))?.analysis?.voice).toBeNull();
+    expect((await addRecording()).analysis?.voice).toEqual(analysis.voice);
   });
 
   it('deletes audio and analysis, and unlinks journal entries that referenced it', async () => {
@@ -275,6 +296,33 @@ describe('backup', () => {
     expect(parsed.recordings[0]?.meta.analysis?.resonance).toBeNull();
     expect(parsed.recordings[0]?.meta.analysis?.summary?.medianHz).toBe(180);
     expect(parsed.recordings[0]?.meta.sizeBytes).toBe(3);
+  });
+
+  it('keeps analyses from before vocal weight was measured, and drops a malformed weight', () => {
+    const imported = (analysisValue: unknown) =>
+      parseBackup(
+        JSON.stringify({
+          format: 'voicebloom-backup',
+          version: 1,
+          recordings: [
+            {
+              meta: { id: 'r1', createdAt: 1, durationMs: 1000, mimeType: 'audio/webm', analysis: analysisValue },
+              audio: { mimeType: 'audio/webm', base64: 'AQID' },
+            },
+          ],
+        }),
+        DEFAULT_SETTINGS,
+      ).recordings[0]?.meta.analysis;
+
+    const { voice: _omitted, ...versionOne } = { ...analysis, version: 1 };
+    const older = imported(versionOne);
+    expect(older?.version).toBe(1);
+    expect(older?.voice).toBeNull();
+    expect(older?.resonance?.formantSpacingHz).toBe(1110);
+
+    expect(imported(analysis)?.voice).toEqual({ h1h2Db: 5.4, frames: 40 });
+    expect(imported({ ...analysis, voice: { h1h2Db: 'light', frames: 40 } })?.voice).toBeNull();
+    expect(imported({ ...analysis, version: 99 })).toBeNull();
   });
 
   it('skips malformed items instead of importing them', () => {
